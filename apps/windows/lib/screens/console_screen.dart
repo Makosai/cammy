@@ -432,38 +432,6 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      // Column 3: Filler
-                      Expanded(
-                        child: ControlModule(
-                          label: '',
-                          control: Container(
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.muted.withValues(
-                                alpha: 0.2,
-                              ),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Column 4: Filler
-                      Expanded(
-                        child: ControlModule(
-                          label: '',
-                          control: Container(
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.muted.withValues(
-                                alpha: 0.2,
-                              ),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ],
