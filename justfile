@@ -11,36 +11,47 @@ setup:
 
 # Verify the hardware connection state of the Camera over USB
 check-camera:
-    @echo "Scanning local USB hubs for a Camera (Vendor ID: 0x3454)..."
-    if ($IsWindows) { \
-        Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -like "*VID_3454*" } | Select-Object FriendlyName, Status \
-    } else { \
-        lsusb | grep -i "3454" || echo "Warning: No matching UVC peripheral found on /dev/bus/usb" \
-    }
+    @just {{ if os() == "windows" { "_check-camera-win" } else { "_check-camera-lin" } }}
+
+_check-camera-win:
+    Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -like "*VID_3454*" } | Select-Object FriendlyName, Status
+
+_check-camera-lin:
+    lsusb | grep -i "3454" || echo "Warning: No matching UVC peripheral found on /dev/bus/usb"
 
 # Trigger code-generation across the unified workspace
 build-runner:
     @echo "Running build_runner across the native workspace..."
     flutter pub run build_runner build --delete-conflicting-outputs --workspace
 
-# Platform Build Commands (Strictly Windows & Linux Shells)
+# Platform Build Commands (Strictly Windows Shell)
 run-windows:
-    cd apps/windows && flutter run -d windows
-
-run-linux:
-    cd apps/linux && flutter run -d linux
+    cd apps/windows; if ($?) { flutter run -d windows }
 
 build-windows-release:
-    cd apps/windows && flutter build windows --release
+    cd apps/windows; if ($?) { flutter build windows --release }
+
+# Platform Build Commands (Strictly Linux/NixOS Shell)
+run-linux:
+    cd apps/linux && flutter run -d linux
 
 build-linux-release:
     cd apps/linux && flutter build linux --release
 
 # Testing & Quality Assurance
 test-all:
-    @echo "Executing pure Dart logic tests across workspace..."
+    @just {{ if os() == "windows" { "_test-win" } else { "_test-lin" } }}
+
+_test-win:
+    @echo "Executing pure Dart logic tests across workspace (Windows)..."
+    cd packages/cammy_core; if ($?) { dart test }
+    @echo "Executing presentation component tests (Windows)..."
+    cd ui_packages/cammy_ui; if ($?) { flutter test }
+
+_test-lin:
+    @echo "Executing pure Dart logic tests across workspace (Linux)..."
     cd packages/cammy_core && dart test
-    @echo "Executing presentation component tests..."
+    @echo "Executing presentation component tests (Linux)..."
     cd ui_packages/cammy_ui && flutter test
 
 analyze:
@@ -49,7 +60,18 @@ analyze:
 
 # Clean up local environment artifacts
 clean-all:
-    @echo "Flushing localized Flutter and Dart compiler caches..."
+    @just {{ if os() == "windows" { "_clean-win" } else { "_clean-lin" } }}
+
+_clean-win:
+    @echo "Flushing localized Flutter and Dart compiler caches (Windows)..."
+    flutter clean
+    cd apps/windows; if ($?) { flutter clean }
+    cd apps/linux; if ($?) { flutter clean }
+    cd ui_packages/cammy_ui; if ($?) { flutter clean }
+    cd packages/cammy_core; if ($?) { dart clean }
+
+_clean-lin:
+    @echo "Flushing localized Flutter and Dart compiler caches (Linux)..."
     flutter clean
     cd apps/windows && flutter clean
     cd apps/linux && flutter clean
@@ -84,6 +106,5 @@ _help_text := '''
 ==========================================================
 '''
 
-# Detailed Developer Handbook and Execution Guide
 help:
     @echo "{{_help_text}}"
