@@ -12,6 +12,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  shadcn_ui: ^0.54.0
 
 dev_dependencies:
   flutter_test:
