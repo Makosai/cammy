@@ -3,9 +3,9 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 class CammyTheme {
   static ShadThemeData dark() {
-    return ShadThemeData(
+    return const ShadThemeData(
       brightness: Brightness.dark,
-      colorScheme: const ShadSlateColorScheme.dark(),
+      colorScheme: ShadSlateColorScheme.dark(),
     );
   }
 }
