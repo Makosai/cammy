@@ -36,10 +36,9 @@ class ConsoleHeader extends StatelessWidget {
             Expanded(
               child: ShadSelect<String>(
                 placeholder: Text(isScanning ? 'Scanning...' : 'Select Camera'),
+                // Set the active value to lock the trigger UI element to the state profile
                 initialValue: selectedCamera,
                 onChanged: onCameraChanged,
-                onPressed:
-                    onRefresh, // Trigger refresh when clicking/opening select
                 selectedOptionBuilder: (context, value) {
                   return Row(
                     mainAxisSize: MainAxisSize.min,
@@ -50,13 +49,9 @@ class ConsoleHeader extends StatelessWidget {
                     ],
                   );
                 },
-                options: [
-                  if (cameras.isEmpty && !isScanning)
-                    const ShadOption(value: '', child: Text('No Camera Found')),
-                  ...cameras.map((cam) {
-                    return ShadOption(value: cam, child: Text(cam));
-                  }),
-                ],
+                options: cameras.map((cam) {
+                  return ShadOption(value: cam, child: Text(cam));
+                }).toList(),
               ),
             ),
             const SizedBox(width: 8),

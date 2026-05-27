@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:camera/camera.dart';
 import 'package:cammy_core/cammy_core.dart';
 import 'package:cammy_ui/cammy_ui.dart';
 import 'package:flutter/material.dart';
@@ -13,9 +14,11 @@ class ConsoleScreen extends StatefulWidget {
 }
 
 class _ConsoleScreenState extends State<ConsoleScreen> {
-  // --- Hardware ---
+  // --- Hardware & Previews ---
   final _scanner = UsbScanner();
   Timer? _refreshTimer;
+  CameraController?
+  _cameraController; // Tracks the active native media stream pipeline
 
   // --- State Variables ---
   bool _isScanning = false;
@@ -33,6 +36,8 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _cameraController
+        ?.dispose(); // Always clear native hardware resources to avoid lock-outs
     super.dispose();
   }
 
@@ -65,22 +70,62 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
           );
 
           if (selectedCamera == null || !retainsSelection) {
-            selectedCamera = _discoveredCameras.first;
-            _isCameraLoading = true;
-            // Simulate loading delay for the initial selection
-            Future.delayed(const Duration(seconds: 1), () {
-              if (mounted) setState(() => _isCameraLoading = false);
-            });
+            _onCameraSelected(_discoveredCameras.first);
           }
         } else {
           selectedCamera = null;
           _isCameraLoading = false;
+          _cameraController?.dispose();
+          _cameraController = null;
         }
         _isScanning = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() => _isScanning = false);
+    }
+  }
+
+  /// Completely initializes the local hardware stream for the chosen camera node
+  Future<void> _onCameraSelected(DiscoveredCamera camera) async {
+    setState(() {
+      selectedCamera = camera;
+      _isCameraLoading = true;
+    });
+
+    // Clean up any old pipeline frames first
+    if (_cameraController != null) {
+      await _cameraController!.dispose();
+      _cameraController = null;
+    }
+
+    try {
+      final hardwareCameras = await availableCameras();
+
+      // Map the custom scanner items back to the system camera definitions
+      final targetSystemCamera = hardwareCameras.firstWhere(
+        (c) =>
+            c.name.toLowerCase().contains(camera.friendlyName.toLowerCase()) ||
+            camera.friendlyName.toLowerCase().contains(c.name.toLowerCase()),
+        orElse: () => hardwareCameras.first,
+      );
+
+      final controller = CameraController(
+        targetSystemCamera,
+        ResolutionPreset.high,
+        enableAudio: false, // We don't need audio
+      );
+
+      await controller.initialize();
+
+      if (!mounted) return;
+      setState(() {
+        _cameraController = controller;
+        _isCameraLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isCameraLoading = false);
     }
   }
 
@@ -132,17 +177,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
         isScanning: _isScanning,
         onCameraChanged: (String? val) {
           if (val == null || val.isEmpty) return;
-          setState(() {
-            selectedCamera = _discoveredCameras.firstWhere(
-              (c) => c.friendlyName == val,
-              orElse: () => _discoveredCameras.first,
-            );
-            _isCameraLoading = true;
-          });
-          // Simulate camera loading delay
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted) setState(() => _isCameraLoading = false);
-          });
+          final match = _discoveredCameras.firstWhere(
+            (c) => c.friendlyName == val,
+          );
+          _onCameraSelected(match);
         },
         onRefresh: _manualRefresh,
         onSave: () {},
@@ -424,26 +462,25 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
       ),
       mainContent: Padding(
         padding: const EdgeInsets.only(left: 12.0),
-        child: Column(
-          children: [
-            // Preview Group Section
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.secondary,
-                  borderRadius: BorderRadius.zero,
-                  border: Border.all(
-                    color: theme.colorScheme.border,
-                    width: 0.5,
-                  ),
-                ),
-                child: Center(
+        child: Container(
+          clipBehavior: Clip
+              .antiAlias, // Enforces clean, sharp edge clipping on the panel
+          decoration: BoxDecoration(
+            color: theme.colorScheme.secondary,
+            borderRadius: BorderRadius.zero,
+            border: Border.all(color: theme.colorScheme.border, width: 0.5),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // STATE 1: Camera Hardware Is Initializing / Buffering Video Channels
+              if (_isCameraLoading) {
+                return Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        _isCameraLoading ? 'Loading Camera' : 'Camera Preview',
-                        style: const TextStyle(
+                      const Text(
+                        'Loading Camera',
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -451,30 +488,107 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        selectedCamera != null
-                            ? selectedCamera!.friendlyName
-                            : 'No camera found...',
+                        selectedCamera?.friendlyName ??
+                            'Initializing hardware node...',
                         style: theme.textTheme.small.copyWith(
                           color: Colors.white54,
-                          fontSize: 14,
                         ),
                       ),
-                      if (_isCameraLoading) ...[
-                        const SizedBox(height: 24),
-                        SizedBox.square(
-                          dimension: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: theme.colorScheme.primary,
-                          ),
+                      const SizedBox(height: 24),
+                      SizedBox.square(
+                        dimension: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.colorScheme.primary,
                         ),
-                      ],
+                      ),
                     ],
                   ),
+                );
+              }
+
+              // STATE 2: Native Pipeline Active - Stream the GPU Texture Frame directly
+              if (_cameraController != null &&
+                  _cameraController!.value.isInitialized) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // The raw, uncompressed DirectShow/MF Video stream rendering window
+                    Center(
+                      child: AspectRatio(
+                        aspectRatio: _cameraController!.value.aspectRatio,
+                        child: CameraPreview(_cameraController!),
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.black87, Colors.transparent],
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Camera Preview',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              selectedCamera?.friendlyName ?? 'Active Stream',
+                              style: theme.textTheme.small.copyWith(
+                                color: Colors.white54,
+                                fontSize: 11,
+                                fontFamily: 'JetBrainsMono',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              // STATE 3: Default Empty/Fallback Screen (No device bounded yet)
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Camera Preview',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No active camera stream initialized.',
+                      style: theme.textTheme.small.copyWith(
+                        color: Colors.white38,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ],
+              );
+            },
+          ),
         ),
       ),
     );
