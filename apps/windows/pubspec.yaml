@@ -41,6 +41,7 @@ dependencies:
     path: ../../packages/cammy_core
   cammy_ui:
     path: ../../ui_packages/cammy_ui
+  shadcn_ui: ^0.54.0
 
 dev_dependencies:
   flutter_test:
