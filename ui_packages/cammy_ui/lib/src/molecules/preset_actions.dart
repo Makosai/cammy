@@ -18,7 +18,7 @@ class PresetActions extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: ShadButton.outline(
+          child: ShadButton(
             size: ShadButtonSize.sm,
             onPressed: onSave,
             child: const Text('Save'),
@@ -26,7 +26,7 @@ class PresetActions extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: ShadButton.outline(
+          child: ShadButton(
             size: ShadButtonSize.sm,
             onPressed: onLoad,
             child: const Text('Load'),
@@ -34,7 +34,7 @@ class PresetActions extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: ShadButton.outline(
+          child: ShadButton(
             size: ShadButtonSize.sm,
             onPressed: onShare,
             child: const Text('Share'),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../theme/cammy_colors.dart';
+
 class ControlAccordionItem {
   final String title;
   final List<Widget> children;
@@ -15,19 +17,35 @@ class ControlAccordion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShadAccordion<ControlAccordionItem>.multiple(
+    return Column(
       children: items.map((item) {
-        return ShadAccordionItem<ControlAccordionItem>(
-          value: item,
-          title: Text(item.title),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: item.children.map((child) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: child,
-              );
-            }).toList(),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: CammyColors.groupBg,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ShadAccordion<ControlAccordionItem>.multiple(
+            children: [
+              ShadAccordionItem<ControlAccordionItem>(
+                value: item,
+                title: Text(item.title),
+                separator: const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: CammyColors.bgDark,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: item.children.map((child) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6.0),
+                      child: child,
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
           ),
         );
       }).toList(),

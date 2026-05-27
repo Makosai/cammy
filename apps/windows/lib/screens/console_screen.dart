@@ -47,11 +47,13 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
     return SplitPaneTemplate(
       sidebarHeader: ConsoleHeader(
         cameras: cameras,
         selectedCamera: selectedCamera,
-        onCameraChanged: (val) => setState(() => selectedCamera = val),
+        onCameraChanged: (String? val) => setState(() => selectedCamera = val),
         onSave: () {},
         onLoad: () {},
         onShare: () {},
@@ -65,7 +67,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                 label: 'Image Version',
                 control: ShadSelect<String>(
                   initialValue: imageVersion,
-                  onChanged: (v) => setState(() => imageVersion = v!),
+                  onChanged: (String? v) => setState(() => imageVersion = v!),
                   selectedOptionBuilder: (context, v) => Text(v),
                   options: [
                     'v1.0.0',
@@ -79,10 +81,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   value: sharpness,
                   min: 0,
                   max: 100,
-                  onChanged: (v) => setState(() => sharpness = v),
+                  onChanged: (double v) => setState(() => sharpness = v),
                 ),
                 inputValue: sharpness.toInt().toString(),
-                onInputChanged: (v) =>
+                onInputChanged: (String v) =>
                     setState(() => sharpness = double.tryParse(v) ?? sharpness),
               ),
               ControlModule(
@@ -91,10 +93,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   value: contrast,
                   min: 0,
                   max: 100,
-                  onChanged: (v) => setState(() => contrast = v),
+                  onChanged: (double v) => setState(() => contrast = v),
                 ),
                 inputValue: contrast.toInt().toString(),
-                onInputChanged: (v) =>
+                onInputChanged: (String v) =>
                     setState(() => contrast = double.tryParse(v) ?? contrast),
               ),
               ControlModule(
@@ -103,10 +105,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   value: saturation,
                   min: 0,
                   max: 100,
-                  onChanged: (v) => setState(() => saturation = v),
+                  onChanged: (double v) => setState(() => saturation = v),
                 ),
                 inputValue: saturation.toInt().toString(),
-                onInputChanged: (v) => setState(
+                onInputChanged: (String v) => setState(
                   () => saturation = double.tryParse(v) ?? saturation,
                 ),
               ),
@@ -116,17 +118,18 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   value: drValue,
                   min: 0,
                   max: 100,
-                  onChanged: (v) => setState(() => drValue = v),
+                  onChanged: (double v) => setState(() => drValue = v),
                 ),
                 inputValue: drValue.toInt().toString(),
-                onInputChanged: (v) =>
+                onInputChanged: (String v) =>
                     setState(() => drValue = double.tryParse(v) ?? drValue),
               ),
               ControlModule(
                 label: 'Lens Shading Correction',
                 control: ShadSwitch(
                   value: lensShadingCorrection,
-                  onChanged: (v) => setState(() => lensShadingCorrection = v),
+                  onChanged: (bool v) =>
+                      setState(() => lensShadingCorrection = v),
                 ),
               ),
             ],
@@ -138,7 +141,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                 label: 'Type',
                 control: ShadSelect<String>(
                   initialValue: focusType,
-                  onChanged: (v) => setState(() => focusType = v!),
+                  onChanged: (String? v) => setState(() => focusType = v!),
                   selectedOptionBuilder: (context, v) => Text(v),
                   options: [
                     'AF-C',
@@ -158,10 +161,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   value: zoomValue,
                   min: 1.0,
                   max: 10.0,
-                  onChanged: (v) => setState(() => zoomValue = v),
+                  onChanged: (double v) => setState(() => zoomValue = v),
                 ),
                 inputValue: zoomValue.toStringAsFixed(1),
-                onInputChanged: (v) =>
+                onInputChanged: (String v) =>
                     setState(() => zoomValue = double.tryParse(v) ?? zoomValue),
               ),
             ],
@@ -172,14 +175,14 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
               CamToggleGroup(
                 value: exposureMode,
                 options: const ['Auto', 'Manual'],
-                onChanged: (v) => setState(() => exposureMode = v),
+                onChanged: (String v) => setState(() => exposureMode = v),
               ),
               const SizedBox(height: 8),
               ControlModule(
                 label: 'ISO',
                 control: ShadSelect<String>(
                   initialValue: isoValue,
-                  onChanged: (v) => setState(() => isoValue = v!),
+                  onChanged: (String? v) => setState(() => isoValue = v!),
                   selectedOptionBuilder: (context, v) => Text(v),
                   options: [
                     '200',
@@ -190,13 +193,13 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   ].map((v) => ShadOption(value: v, child: Text(v))).toList(),
                 ),
                 inputValue: isoValue,
-                onInputChanged: (v) => setState(() => isoValue = v),
+                onInputChanged: (String v) => setState(() => isoValue = v),
               ),
               ControlModule(
                 label: 'Shutter',
                 control: ShadSelect<String>(
                   initialValue: shutterSpeed,
-                  onChanged: (v) => setState(() => shutterSpeed = v!),
+                  onChanged: (String? v) => setState(() => shutterSpeed = v!),
                   selectedOptionBuilder: (context, v) => Text(v),
                   options: [
                     '1/100',
@@ -207,7 +210,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   ].map((v) => ShadOption(value: v, child: Text(v))).toList(),
                 ),
                 inputValue: shutterSpeed,
-                onInputChanged: (v) => setState(() => shutterSpeed = v),
+                onInputChanged: (String v) => setState(() => shutterSpeed = v),
               ),
             ],
           ),
@@ -217,7 +220,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
               CamToggleGroup(
                 value: wbMode,
                 options: const ['Auto', 'Manual'],
-                onChanged: (v) => setState(() => wbMode = v),
+                onChanged: (String v) => setState(() => wbMode = v),
               ),
               const SizedBox(height: 8),
               ControlModule(
@@ -226,17 +229,17 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   value: wbTemp,
                   min: 2000,
                   max: 10000,
-                  onChanged: (v) => setState(() => wbTemp = v),
+                  onChanged: (double v) => setState(() => wbTemp = v),
                 ),
                 inputValue: wbTemp.toInt().toString(),
-                onInputChanged: (v) =>
+                onInputChanged: (String v) =>
                     setState(() => wbTemp = double.tryParse(v) ?? wbTemp),
               ),
               ControlModule(
                 label: 'Green Offset',
                 control: const SizedBox.shrink(),
                 inputValue: greenOffset,
-                onInputChanged: (v) => setState(() => greenOffset = v),
+                onInputChanged: (String v) => setState(() => greenOffset = v),
               ),
               ControlModule(
                 label: 'Blue Offset',
@@ -244,10 +247,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   value: blueOffset,
                   min: -100,
                   max: 100,
-                  onChanged: (v) => setState(() => blueOffset = v),
+                  onChanged: (double v) => setState(() => blueOffset = v),
                 ),
                 inputValue: blueOffset.toInt().toString(),
-                onInputChanged: (v) => setState(
+                onInputChanged: (String v) => setState(
                   () => blueOffset = double.tryParse(v) ?? blueOffset,
                 ),
               ),
@@ -257,102 +260,137 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   value: redOffset,
                   min: -100,
                   max: 100,
-                  onChanged: (v) => setState(() => redOffset = v),
+                  onChanged: (double v) => setState(() => redOffset = v),
                 ),
                 inputValue: redOffset.toInt().toString(),
-                onInputChanged: (v) =>
+                onInputChanged: (String v) =>
                     setState(() => redOffset = double.tryParse(v) ?? redOffset),
               ),
             ],
           ),
         ],
       ),
-      mainContent: Column(
-        children: [
-          // Preview Section
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(24),
+      mainContent: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            // Preview Group Section
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.secondary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Camera Preview',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'under development',
+                        style: theme.textTheme.small.copyWith(
+                          color: Colors.white54,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Bottom Config Group Section
+            Container(
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.black,
+                color: theme.colorScheme.secondary,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white10),
               ),
-              child: const Center(
-                child: Text(
-                  'Camera Preview Placeholder',
-                  style: TextStyle(color: Colors.white54),
-                ),
-              ),
-            ),
-          ),
-          // Bottom Controls
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ControlModule(
-                    label: 'Resolution & Frame Rate',
-                    control: ShadSelect<String>(
-                      initialValue: '$resolution @ $frameRate',
-                      onChanged: (v) {
-                        final parts = v!.split(' @ ');
-                        setState(() {
-                          resolution = parts[0];
-                          frameRate = parts[1];
-                        });
-                      },
-                      selectedOptionBuilder: (context, v) => Text(v),
-                      options:
-                          ['1080p @ 60fps', '1080p @ 30fps', '720p @ 60fps']
-                              .map((v) => ShadOption(value: v, child: Text(v)))
-                              .toList(),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ControlModule(
+                      label: 'Resolution & Frame Rate',
+                      control: ShadSelect<String>(
+                        initialValue: '$resolution @ $frameRate',
+                        onChanged: (String? v) {
+                          if (v == null) return;
+                          final parts = v.split(' @ ');
+                          setState(() {
+                            resolution = parts[0];
+                            frameRate = parts[1];
+                          });
+                        },
+                        selectedOptionBuilder: (context, v) => Text(v),
+                        options:
+                            ['1080p @ 60fps', '1080p @ 30fps', '720p @ 60fps']
+                                .map(
+                                  (v) => ShadOption(value: v, child: Text(v)),
+                                )
+                                .toList(),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 24),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Orientation', style: TextStyle(fontSize: 12)),
-                    const SizedBox(height: 8),
-                    ShadTabs<String>(
-                      value: orientation,
-                      onChanged: (v) => setState(() => orientation = v),
-                      tabs: [
-                        const ShadTab(
-                          value: 'Horizontal',
-                          content: SizedBox.shrink(),
-                          child: Text('H'),
+                  const SizedBox(width: 24),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Orientation',
+                        style: theme.textTheme.small.copyWith(
+                          color: theme.colorScheme.foreground,
                         ),
-                        const ShadTab(
-                          value: 'Vertical',
-                          content: SizedBox.shrink(),
-                          child: Text('V'),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: 120,
+                        child: ShadTabs<String>(
+                          value: orientation,
+                          onChanged: (String? v) =>
+                              setState(() => orientation = v!),
+                          tabs: const [
+                            ShadTab(
+                              value: 'Horizontal',
+                              content: SizedBox.shrink(),
+                              child: Text('H'),
+                            ),
+                            ShadTab(
+                              value: 'Vertical',
+                              content: SizedBox.shrink(),
+                              child: Text('V'),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: ControlModule(
-                    label: 'Presets',
-                    control: ShadSelect<String>(
-                      placeholder: const Text('Select Preset'),
-                      onChanged: (v) {},
-                      selectedOptionBuilder: (context, v) => Text(v),
-                      options: ['Cinema', 'Natural', 'Vibrant']
-                          .map((v) => ShadOption(value: v, child: Text(v)))
-                          .toList(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: ControlModule(
+                      label: 'Presets',
+                      control: ShadSelect<String>(
+                        placeholder: const Text('Select Preset'),
+                        onChanged: (String? v) {},
+                        selectedOptionBuilder: (context, v) => Text(v),
+                        options: ['Cinema', 'Natural', 'Vibrant']
+                            .map((v) => ShadOption(value: v, child: Text(v)))
+                            .toList(),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

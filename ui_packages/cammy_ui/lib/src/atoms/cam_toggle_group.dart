@@ -19,7 +19,11 @@ class CamToggleGroup extends StatelessWidget {
       value: value,
       onChanged: onChanged,
       tabs: options.map((opt) {
-        return ShadTab(value: opt, child: Text(opt));
+        return ShadTab(
+          value: opt,
+          content: const SizedBox.shrink(),
+          child: Text(opt),
+        );
       }).toList(),
     );
   }
