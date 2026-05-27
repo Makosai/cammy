@@ -19,8 +19,9 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
 
   // --- State Variables ---
   bool _isScanning = false;
-  String? selectedCamera;
-  List<String> cameras = [];
+  bool _isCameraLoading = false;
+  DiscoveredCamera? selectedCamera;
+  List<DiscoveredCamera> _discoveredCameras = [];
 
   @override
   void initState() {
@@ -48,7 +49,6 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
 
     setState(() => _isScanning = true);
 
-    // Run discovery (might be fast, but we ensure UI reflects loading)
     try {
       final discovered = await Future.delayed(
         const Duration(milliseconds: 500),
@@ -58,13 +58,23 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
       if (!mounted) return;
 
       setState(() {
-        cameras = discovered.map((c) => c.friendlyName).toList();
-        if (cameras.isNotEmpty) {
-          if (selectedCamera == null || !cameras.contains(selectedCamera)) {
-            selectedCamera = cameras.first;
+        _discoveredCameras = discovered;
+        if (_discoveredCameras.isNotEmpty) {
+          final retainsSelection = _discoveredCameras.any(
+            (c) => c.deviceInstanceId == selectedCamera?.deviceInstanceId,
+          );
+
+          if (selectedCamera == null || !retainsSelection) {
+            selectedCamera = _discoveredCameras.first;
+            _isCameraLoading = true;
+            // Simulate loading delay for the initial selection
+            Future.delayed(const Duration(seconds: 1), () {
+              if (mounted) setState(() => _isCameraLoading = false);
+            });
           }
         } else {
           selectedCamera = null;
+          _isCameraLoading = false;
         }
         _isScanning = false;
       });
@@ -117,10 +127,23 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
 
     return SplitPaneTemplate(
       sidebarHeader: ConsoleHeader(
-        cameras: cameras,
-        selectedCamera: selectedCamera,
+        cameras: _discoveredCameras.map((c) => c.friendlyName).toList(),
+        selectedCamera: selectedCamera?.friendlyName,
         isScanning: _isScanning,
-        onCameraChanged: (String? val) => setState(() => selectedCamera = val),
+        onCameraChanged: (String? val) {
+          if (val == null || val.isEmpty) return;
+          setState(() {
+            selectedCamera = _discoveredCameras.firstWhere(
+              (c) => c.friendlyName == val,
+              orElse: () => _discoveredCameras.first,
+            );
+            _isCameraLoading = true;
+          });
+          // Simulate camera loading delay
+          Future.delayed(const Duration(seconds: 1), () {
+            if (mounted) setState(() => _isCameraLoading = false);
+          });
+        },
         onRefresh: _manualRefresh,
         onSave: () {},
         onLoad: () {},
@@ -418,9 +441,9 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        'Camera Preview',
-                        style: TextStyle(
+                      Text(
+                        _isCameraLoading ? 'Loading Camera' : 'Camera Preview',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -428,12 +451,24 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'under development',
+                        selectedCamera != null
+                            ? selectedCamera!.friendlyName
+                            : 'No camera found...',
                         style: theme.textTheme.small.copyWith(
                           color: Colors.white54,
                           fontSize: 14,
                         ),
                       ),
+                      if (_isCameraLoading) ...[
+                        const SizedBox(height: 24),
+                        SizedBox.square(
+                          dimension: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
