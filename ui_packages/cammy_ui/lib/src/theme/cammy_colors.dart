@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class CammyColors {
-  // Brand / Primary
+  // Brand / Primary / Secondary
   static const Color primary = Color(0xFF2563EB);
   static const Color primaryHoverDark = Color(0xFF3B82F6);
+  static const secondary = Color(0xFF2B2B2B);
 
   // Text
   static const Color textDark = Color(0xFFDCE1DF);

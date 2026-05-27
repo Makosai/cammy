@@ -325,6 +325,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                 children: [
                   // Row with 4 equal-sized columns
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Column 1: Presets, Resolution & Orientation
                       Expanded(
@@ -346,9 +347,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                                     .toList(),
                               ),
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 16),
                             // Resolution and Orientation Row
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
                                   flex: 1,

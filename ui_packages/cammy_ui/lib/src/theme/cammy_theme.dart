@@ -12,7 +12,7 @@ class CammyTheme {
         primary: CammyColors.primary,
         background: CammyColors.bgDark,
         foreground: CammyColors.textDark,
-        muted: CammyColors.groupBg,
+        muted: CammyColors.secondary,
         mutedForeground: CammyColors.textMuted,
         popover: CammyColors.dropdownBg,
         secondary: CammyColors.groupBg,
