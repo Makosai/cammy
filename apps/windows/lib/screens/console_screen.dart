@@ -59,6 +59,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
         onShare: () {},
       ),
       sidebarContent: ControlAccordion(
+        key: const PageStorageKey('sidebar-accordion'),
         items: [
           ControlAccordionItem(
             title: 'Image Settings',
@@ -322,6 +323,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Row 1: Presets
                   Row(
                     children: [
                       Expanded(
@@ -339,13 +341,17 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                           ),
                         ),
                       ),
+                      const Expanded(child: SizedBox()),
+                      const Expanded(child: SizedBox()),
+                      const Expanded(child: SizedBox()),
                     ],
                   ),
                   const SizedBox(height: 24),
+                  // Row 2: Resolution and Orientation
                   Row(
                     children: [
                       Expanded(
-                        flex: 3,
+                        flex: 1,
                         child: ControlModule(
                           label: 'Resolution & Frame Rate',
                           control: ShadSelect<String>(
@@ -373,7 +379,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 8),
                       Expanded(
                         flex: 1,
                         child: Column(
@@ -382,7 +388,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                             Text(
                               'Orientation',
                               style: theme.textTheme.small.copyWith(
-                                color: theme.colorScheme.foreground,
+                                color: theme.colorScheme.mutedForeground,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -409,6 +415,8 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                           ],
                         ),
                       ),
+                      const Expanded(child: SizedBox()),
+                      const Expanded(child: SizedBox()),
                     ],
                   ),
                 ],
