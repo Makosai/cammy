@@ -25,10 +25,10 @@ class ControlAccordion extends StatelessWidget {
             color: CammyColors.groupBg,
             borderRadius: BorderRadius.circular(4),
           ),
-          child: ShadAccordion<ControlAccordionItem>.multiple(
+          child: ShadAccordion<String>.multiple(
             children: [
-              ShadAccordionItem<ControlAccordionItem>(
-                value: item,
+              ShadAccordionItem<String>(
+                value: item.title,
                 title: Text(item.title),
                 separator: const Divider(
                   height: 1,
