@@ -135,6 +135,14 @@ class UsbScanner {
               }
             }
 
+            // Skip virtual streaming audio hardware nodes inside the capture loop
+            if (hardwareId.contains('AUDIO') ||
+                friendlyName.toLowerCase().contains('microphone') ||
+                friendlyName.toLowerCase().contains('speakers')) {
+              i++;
+              continue;
+            }
+
             devicesFound.add(
               DiscoveredCamera(
                 friendlyName: friendlyName,
