@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cammy_core/cammy_core.dart';
 import 'package:cammy_ui/cammy_ui.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +15,10 @@ class ConsoleScreen extends StatefulWidget {
 class _ConsoleScreenState extends State<ConsoleScreen> {
   // --- Hardware ---
   final _scanner = UsbScanner();
+  Timer? _refreshTimer;
 
   // --- State Variables ---
+  bool _isScanning = false;
   String? selectedCamera;
   List<String> cameras = [];
 
@@ -22,16 +26,48 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   void initState() {
     super.initState();
     _scanForCameras();
+    // Periodic refresh every 15 seconds
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _scanForCameras(),
+    );
   }
 
-  void _scanForCameras() {
-    final discovered = _scanner.discoverActiveCameras();
-    setState(() {
-      cameras = discovered.map((c) => c.friendlyName).toList();
-      if (cameras.isNotEmpty) {
-        selectedCamera = cameras.first;
-      }
-    });
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _scanForCameras() async {
+    if (_isScanning) return;
+
+    setState(() => _isScanning = true);
+
+    // Run discovery (might be fast, but we ensure UI reflects loading)
+    try {
+      final discovered = await Future.delayed(
+        const Duration(milliseconds: 500),
+        () => _scanner.discoverActiveCameras(),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        cameras = discovered.map((c) => c.friendlyName).toList();
+        if (cameras.isNotEmpty) {
+          if (selectedCamera == null || !cameras.contains(selectedCamera)) {
+            selectedCamera = cameras.first;
+          }
+        } else {
+          selectedCamera = null;
+        }
+        _isScanning = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isScanning = false);
+    }
   }
 
   // General Settings
@@ -74,7 +110,9 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
       sidebarHeader: ConsoleHeader(
         cameras: cameras,
         selectedCamera: selectedCamera,
+        isScanning: _isScanning,
         onCameraChanged: (String? val) => setState(() => selectedCamera = val),
+        onRefresh: _scanForCameras,
         onSave: () {},
         onLoad: () {},
         onShare: () {},
