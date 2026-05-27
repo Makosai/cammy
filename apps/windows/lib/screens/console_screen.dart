@@ -1,3 +1,4 @@
+import 'package:cammy_core/cammy_core.dart';
 import 'package:cammy_ui/cammy_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -10,9 +11,28 @@ class ConsoleScreen extends StatefulWidget {
 }
 
 class _ConsoleScreenState extends State<ConsoleScreen> {
+  // --- Hardware ---
+  final _scanner = UsbScanner();
+
   // --- State Variables ---
-  String? selectedCamera = 'Camera #1';
-  final List<String> cameras = ['Camera #1', 'Camera #2'];
+  String? selectedCamera;
+  List<String> cameras = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _scanForCameras();
+  }
+
+  void _scanForCameras() {
+    final discovered = _scanner.discoverActiveCameras();
+    setState(() {
+      cameras = discovered.map((c) => c.friendlyName).toList();
+      if (cameras.isNotEmpty) {
+        selectedCamera = cameras.first;
+      }
+    });
+  }
 
   // General Settings
   String preset = 'Natural';
@@ -333,7 +353,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
         ],
       ),
       mainContent: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.only(left: 12.0),
         child: Column(
           children: [
             // Preview Group Section
@@ -341,7 +361,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: theme.colorScheme.secondary,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.zero,
                   border: Border.all(
                     color: theme.colorScheme.border,
                     width: 0.5,
