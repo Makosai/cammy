@@ -19,7 +19,6 @@ linter:
     - prefer_const_declarations
     - prefer_const_constructors_in_immutables
     - prefer_final_locals
-    - prefer_final_in_foreach
     - avoid_print
     - require_trailing_commas
 
