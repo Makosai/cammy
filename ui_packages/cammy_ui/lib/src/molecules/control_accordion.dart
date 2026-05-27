@@ -20,10 +20,10 @@ class ControlAccordion extends StatelessWidget {
     return Column(
       children: items.map((item) {
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.only(bottom: 2),
           decoration: BoxDecoration(
             color: CammyColors.groupBg,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(4),
           ),
           child: ShadAccordion<ControlAccordionItem>.multiple(
             children: [
@@ -35,14 +35,17 @@ class ControlAccordion extends StatelessWidget {
                   thickness: 1,
                   color: CammyColors.bgDark,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: item.children.map((child) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6.0),
-                      child: child,
-                    );
-                  }).toList(),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: item.children.map((child) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: child,
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ],

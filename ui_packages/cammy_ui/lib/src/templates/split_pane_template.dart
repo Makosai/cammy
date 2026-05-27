@@ -23,21 +23,27 @@ class SplitPaneTemplate extends StatelessWidget {
         children: [
           // Fixed Left Sidebar
           SizedBox(
-            width: 320,
+            width: 300, // Slightly thinner
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
                   child: sidebarHeader,
                 ),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: sidebarContent,
                   ),
                 ),
               ],
             ),
+          ),
+          // Thinner vertical gap
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: theme.colorScheme.border,
           ),
           // Static Main Content
           Expanded(

@@ -35,7 +35,7 @@ class PresetActions extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: ShadButton(
-            size: ShadButtonSize.sm,
+            size: ShadButtonSize.regular,
             onPressed: onShare,
             child: const Text('Share'),
           ),

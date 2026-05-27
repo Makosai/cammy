@@ -271,7 +271,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
         ],
       ),
       mainContent: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
             // Preview Group Section
@@ -280,6 +280,10 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.secondary,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.colorScheme.border,
+                    width: 0.5,
+                  ),
                 ),
                 child: Center(
                   child: Column(
@@ -306,85 +310,106 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
             // Bottom Config Group Section
             Container(
+              height: 240,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: theme.colorScheme.secondary,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: ControlModule(
-                      label: 'Resolution & Frame Rate',
-                      control: ShadSelect<String>(
-                        initialValue: '$resolution @ $frameRate',
-                        onChanged: (String? v) {
-                          if (v == null) return;
-                          final parts = v.split(' @ ');
-                          setState(() {
-                            resolution = parts[0];
-                            frameRate = parts[1];
-                          });
-                        },
-                        selectedOptionBuilder: (context, v) => Text(v),
-                        options:
-                            ['1080p @ 60fps', '1080p @ 30fps', '720p @ 60fps']
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ControlModule(
+                          label: 'Presets',
+                          control: ShadSelect<String>(
+                            placeholder: const Text('Select Preset'),
+                            onChanged: (String? v) {},
+                            selectedOptionBuilder: (context, v) => Text(v),
+                            options: ['Cinema', 'Natural', 'Vibrant']
                                 .map(
                                   (v) => ShadOption(value: v, child: Text(v)),
                                 )
                                 .toList(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Orientation',
-                        style: theme.textTheme.small.copyWith(
-                          color: theme.colorScheme.foreground,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: 120,
-                        child: ShadTabs<String>(
-                          value: orientation,
-                          onChanged: (String? v) =>
-                              setState(() => orientation = v!),
-                          tabs: const [
-                            ShadTab(
-                              value: 'Horizontal',
-                              content: SizedBox.shrink(),
-                              child: Text('H'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: ControlModule(
+                          label: 'Resolution & Frame Rate',
+                          control: ShadSelect<String>(
+                            initialValue: '$resolution @ $frameRate',
+                            onChanged: (String? v) {
+                              if (v == null) return;
+                              final parts = v.split(' @ ');
+                              setState(() {
+                                resolution = parts[0];
+                                frameRate = parts[1];
+                              });
+                            },
+                            selectedOptionBuilder: (context, v) => Text(v),
+                            options:
+                                [
+                                      '1080p @ 60fps',
+                                      '1080p @ 30fps',
+                                      '720p @ 60fps',
+                                    ]
+                                    .map(
+                                      (v) =>
+                                          ShadOption(value: v, child: Text(v)),
+                                    )
+                                    .toList(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Orientation',
+                              style: theme.textTheme.small.copyWith(
+                                color: theme.colorScheme.foreground,
+                              ),
                             ),
-                            ShadTab(
-                              value: 'Vertical',
-                              content: SizedBox.shrink(),
-                              child: Text('V'),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ShadTabs<String>(
+                                value: orientation,
+                                onChanged: (String? v) =>
+                                    setState(() => orientation = v!),
+                                tabs: const [
+                                  ShadTab(
+                                    value: 'Horizontal',
+                                    content: SizedBox.shrink(),
+                                    child: Text('H'),
+                                  ),
+                                  ShadTab(
+                                    value: 'Vertical',
+                                    content: SizedBox.shrink(),
+                                    child: Text('V'),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: ControlModule(
-                      label: 'Presets',
-                      control: ShadSelect<String>(
-                        placeholder: const Text('Select Preset'),
-                        onChanged: (String? v) {},
-                        selectedOptionBuilder: (context, v) => Text(v),
-                        options: ['Cinema', 'Natural', 'Vibrant']
-                            .map((v) => ShadOption(value: v, child: Text(v)))
-                            .toList(),
-                      ),
-                    ),
                   ),
                 ],
               ),
