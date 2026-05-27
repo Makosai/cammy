@@ -17,12 +17,12 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   // --- Hardware & Previews ---
   final _scanner = UsbScanner();
   Timer? _refreshTimer;
-  CameraController?
-  _cameraController; // Tracks the active native media stream pipeline
+  CameraController? _cameraController;
 
   // --- State Variables ---
   bool _isScanning = false;
   bool _isCameraLoading = false;
+  String? _pipelineError; // Tracks underlying native initialization errors
   DiscoveredCamera? selectedCamera;
   List<DiscoveredCamera> _discoveredCameras = [];
 
@@ -36,8 +36,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
-    _cameraController
-        ?.dispose(); // Always clear native hardware resources to avoid lock-outs
+    _cameraController?.dispose();
     super.dispose();
   }
 
@@ -77,6 +76,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
           _isCameraLoading = false;
           _cameraController?.dispose();
           _cameraController = null;
+          _pipelineError = null;
         }
         _isScanning = false;
       });
@@ -91,9 +91,9 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
     setState(() {
       selectedCamera = camera;
       _isCameraLoading = true;
+      _pipelineError = null; // Flush legacy failures
     });
 
-    // Clean up any old pipeline frames first
     if (_cameraController != null) {
       await _cameraController!.dispose();
       _cameraController = null;
@@ -102,7 +102,18 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
     try {
       final hardwareCameras = await availableCameras();
 
-      // Map the custom scanner items back to the system camera definitions
+      // Print system strings straight to your terminal to audit WMF visibility
+      debugPrint(
+        "Cammy Media Foundation Found: ${hardwareCameras.map((c) => c.name).toList()}",
+      );
+
+      if (hardwareCameras.isEmpty) {
+        throw Exception(
+          "Windows Media Foundation reports 0 media capture sources available.",
+        );
+      }
+
+      // Loose matching sequence to reconcile FFI and WMF driver variations
       final targetSystemCamera = hardwareCameras.firstWhere(
         (c) =>
             c.name.toLowerCase().contains(camera.friendlyName.toLowerCase()) ||
@@ -113,7 +124,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
       final controller = CameraController(
         targetSystemCamera,
         ResolutionPreset.high,
-        enableAudio: false, // We don't need audio
+        enableAudio: false,
       );
 
       await controller.initialize();
@@ -124,8 +135,13 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
         _isCameraLoading = false;
       });
     } catch (e) {
+      debugPrint("CRITICAL CAMERA STAND UP FAILURE: $e");
       if (!mounted) return;
-      setState(() => _isCameraLoading = false);
+      setState(() {
+        _isCameraLoading = false;
+        _pipelineError = e
+            .toString(); // Expose the exact exception block string to the UI
+      });
     }
   }
 
@@ -463,8 +479,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
       mainContent: Padding(
         padding: const EdgeInsets.only(left: 12.0),
         child: Container(
-          clipBehavior: Clip
-              .antiAlias, // Enforces clean, sharp edge clipping on the panel
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: theme.colorScheme.secondary,
             borderRadius: BorderRadius.zero,
@@ -508,12 +523,48 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
               }
 
               // STATE 2: Native Pipeline Active - Stream the GPU Texture Frame directly
+              if (_pipelineError != null) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          LucideIcons.alertTriangle,
+                          color: Colors.orangeAccent,
+                          size: 32,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Pipeline Initialization Failed',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _pipelineError!,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.small.copyWith(
+                            color: Colors.redAccent,
+                            fontFamily: 'JetBrainsMono',
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
               if (_cameraController != null &&
                   _cameraController!.value.isInitialized) {
                 return Stack(
                   fit: StackFit.expand,
                   children: [
-                    // The raw, uncompressed DirectShow/MF Video stream rendering window
                     Center(
                       child: AspectRatio(
                         aspectRatio: _cameraController!.value.aspectRatio,

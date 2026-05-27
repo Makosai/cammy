@@ -43,6 +43,7 @@ dependencies:
     path: ../../ui_packages/cammy_ui
   shadcn_ui: ^0.54.0
   camera: ^0.12.0+1
+  camera_windows: ^0.2.6+4
 
 dev_dependencies:
   flutter_test:
