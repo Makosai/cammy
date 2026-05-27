@@ -26,17 +26,21 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
   void initState() {
     super.initState();
     _scanForCameras();
-    // Periodic refresh every 15 seconds
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _scanForCameras(),
-    );
+    _startTimer();
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  void _startTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _scanForCameras(),
+    );
   }
 
   Future<void> _scanForCameras() async {
@@ -68,6 +72,11 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
       if (!mounted) return;
       setState(() => _isScanning = false);
     }
+  }
+
+  void _manualRefresh() {
+    _scanForCameras();
+    _startTimer();
   }
 
   // General Settings
@@ -112,7 +121,7 @@ class _ConsoleScreenState extends State<ConsoleScreen> {
         selectedCamera: selectedCamera,
         isScanning: _isScanning,
         onCameraChanged: (String? val) => setState(() => selectedCamera = val),
-        onRefresh: _scanForCameras,
+        onRefresh: _manualRefresh,
         onSave: () {},
         onLoad: () {},
         onShare: () {},
