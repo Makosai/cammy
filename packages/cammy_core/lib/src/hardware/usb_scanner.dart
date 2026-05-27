@@ -6,115 +6,147 @@ import 'package:win32/win32.dart';
 import '../models/discovered_camera.dart';
 
 class UsbScanner {
-  static const int cammyVendorId = 0x3454;
+  static const int largeBufferLength = 2048;
 
-  /// Actively queries the Windows hardware hub layout, searching for and
-  /// isolating specific configurations
+  /// Audits the Windows multimedia streaming architecture to find and return
+  /// EVERY active video capture component connected to the host system.
   List<DiscoveredCamera> discoverActiveCameras() {
     final devicesFound = <DiscoveredCamera>[];
     final arena = Arena();
 
     try {
-      // GUID_DEVINTERFACE_USB_DEVICE {A5DCBF10-6530-11D2-901F-00C04FB17C9E}
-      final guid = arena<GUID>();
-      guid.ref.Data1 = 0xA5DCBF10;
-      guid.ref.Data2 = 0x6530;
-      guid.ref.Data3 = 0x11D2;
-      guid.ref.Data4[0] = 0x90;
-      guid.ref.Data4[1] = 0x1F;
-      guid.ref.Data4[2] = 0x00;
-      guid.ref.Data4[3] = 0xC0;
-      guid.ref.Data4[4] = 0x4F;
-      guid.ref.Data4[5] = 0xB1;
-      guid.ref.Data4[6] = 0x7C;
-      guid.ref.Data4[7] = 0x9E;
+      // Manually build KSCATEGORY_VIDEO {E5323777-F976-4f5b-9B55-B94699C46E44}
+      final guidVideo = arena<GUID>();
+      guidVideo.ref.Data1 = 0xE5323777;
+      guidVideo.ref.Data2 = 0xF976;
+      guidVideo.ref.Data3 = 0x4F5B;
+      guidVideo.ref.Data4[0] = 0x9B;
+      guidVideo.ref.Data4[1] = 0x55;
+      guidVideo.ref.Data4[2] = 0xB9;
+      guidVideo.ref.Data4[3] = 0x46;
+      guidVideo.ref.Data4[4] = 0x99;
+      guidVideo.ref.Data4[5] = 0xC4;
+      guidVideo.ref.Data4[6] = 0x6E;
+      guidVideo.ref.Data4[7] = 0x44;
 
-      final hDevInfoResult = SetupDiGetClassDevs(
-        guid,
-        null,
-        null,
-        SETUP_DI_GET_CLASS_DEVS_FLAGS(DIGCF_PRESENT | DIGCF_DEVICEINTERFACE),
-      );
+      // Manually build KSCATEGORY_CAPTURE {65E8773D-8F56-11D0-A3B9-00A0C9223196}
+      final guidCapture = arena<GUID>();
+      guidCapture.ref.Data1 = 0x65E8773D;
+      guidCapture.ref.Data2 = 0x8F56;
+      guidCapture.ref.Data3 = 0x11D0;
+      guidCapture.ref.Data4[0] = 0xA3;
+      guidCapture.ref.Data4[1] = 0xB9;
+      guidCapture.ref.Data4[2] = 0x00;
+      guidCapture.ref.Data4[3] = 0xA0;
+      guidCapture.ref.Data4[4] = 0xC9;
+      guidCapture.ref.Data4[5] = 0x22;
+      guidCapture.ref.Data4[6] = 0x31;
+      guidCapture.ref.Data4[7] = 0x96;
 
-      if (hDevInfoResult.error.isError) {
-        return devicesFound;
-      }
+      final processingCategories = [guidVideo, guidCapture];
 
-      final hDevInfo = hDevInfoResult.value;
+      for (final targetGuid in processingCategories) {
+        final hDevInfoResult = SetupDiGetClassDevs(
+          targetGuid,
+          null,
+          null,
+          SETUP_DI_GET_CLASS_DEVS_FLAGS(DIGCF_PRESENT | DIGCF_DEVICEINTERFACE),
+        );
 
-      try {
-        final devInfoData = arena<SP_DEVINFO_DATA>();
-        devInfoData.ref.cbSize = sizeOf<SP_DEVINFO_DATA>();
+        if (hDevInfoResult.error.isError) continue;
 
-        int i = 0;
-        while (SetupDiEnumDeviceInfo(hDevInfo, i, devInfoData).value) {
-          final hardwareIdBuffer = arena<Uint16>(MAX_PATH);
-          final friendlyNameBuffer = arena<Uint16>(MAX_PATH);
-          final instanceIdBuffer = arena<Uint16>(MAX_PATH);
-          final propertySize = arena<Uint32>();
+        final hDevInfo = hDevInfoResult.value;
 
-          // Search and pull the Hardware ID string
-          final hwResult = SetupDiGetDeviceRegistryProperty(
-            hDevInfo,
-            devInfoData,
-            const SETUP_DI_REGISTRY_PROPERTY(SPDRP_HARDWAREID),
-            null,
-            hardwareIdBuffer.cast(),
-            MAX_PATH * 2,
-            propertySize,
-          );
+        try {
+          final devInfoData = arena<SP_DEVINFO_DATA>();
+          devInfoData.ref.cbSize = sizeOf<SP_DEVINFO_DATA>();
 
-          if (hwResult.value) {
-            final hardwareId = hardwareIdBuffer.cast<Utf16>().toDartString();
+          int i = 0;
+          // Walk down the device info blocks directly mapped within the interface category set
+          while (SetupDiEnumDeviceInfo(hDevInfo, i, devInfoData).value) {
+            final hardwareIdBuffer = arena<Uint16>(largeBufferLength);
+            final friendlyNameBuffer = arena<Uint16>(largeBufferLength);
+            final instanceIdBuffer = arena<Uint16>(largeBufferLength);
+            final propertySize = arena<Uint32>();
 
-            // Perform dynamic vendor matching verification
-            if (hardwareId.contains(
-              'VID_${cammyVendorId.toRadixString(16).toUpperCase()}',
+            // Extract unique device instance path
+            String deviceInstanceId = "UNKNOWN-NODE-$i";
+            final instanceResult = SetupDiGetDeviceInstanceId(
+              hDevInfo,
+              devInfoData,
+              PWSTR(instanceIdBuffer.cast()),
+              largeBufferLength,
+              null,
+            );
+            if (instanceResult.value) {
+              deviceInstanceId = instanceIdBuffer.cast<Utf16>().toDartString();
+            }
+
+            // Avoid adding items tracked across multiple multimedia categories
+            if (devicesFound.any(
+              (d) => d.deviceInstanceId == deviceInstanceId,
             )) {
-              // Extract the OS friendly name
-              String friendlyName = "Camera Device";
-              final nameResult = SetupDiGetDeviceRegistryProperty(
+              i++;
+              continue;
+            }
+
+            // Extract the Hardware ID descriptor string
+            String hardwareId = "UNKNOWN_HW_ID";
+            final hwResult = SetupDiGetDeviceRegistryProperty(
+              hDevInfo,
+              devInfoData,
+              const SETUP_DI_REGISTRY_PROPERTY(SPDRP_HARDWAREID),
+              null,
+              hardwareIdBuffer.cast(),
+              largeBufferLength * 2,
+              propertySize,
+            );
+            if (hwResult.value) {
+              hardwareId = hardwareIdBuffer.cast<Utf16>().toDartString();
+            }
+
+            // Extract string representation name
+            String friendlyName = "Camera Device";
+            final nameResult = SetupDiGetDeviceRegistryProperty(
+              hDevInfo,
+              devInfoData,
+              const SETUP_DI_REGISTRY_PROPERTY(SPDRP_FRIENDLYNAME),
+              null,
+              friendlyNameBuffer.cast(),
+              largeBufferLength * 2,
+              propertySize,
+            );
+
+            if (nameResult.value) {
+              friendlyName = friendlyNameBuffer.cast<Utf16>().toDartString();
+            } else {
+              // Fallback to base kernel driver description if friendly name is missing
+              final descResult = SetupDiGetDeviceRegistryProperty(
                 hDevInfo,
                 devInfoData,
-                const SETUP_DI_REGISTRY_PROPERTY(SPDRP_FRIENDLYNAME),
+                const SETUP_DI_REGISTRY_PROPERTY(SPDRP_DEVICEDESC),
                 null,
                 friendlyNameBuffer.cast(),
-                MAX_PATH * 2,
+                largeBufferLength * 2,
                 propertySize,
               );
-              if (nameResult.value) {
+              if (descResult.value) {
                 friendlyName = friendlyNameBuffer.cast<Utf16>().toDartString();
               }
-
-              // Retrieve the absolute Device Instance ID for direct binding paths
-              String deviceInstanceId = "UNKNOWN_INSTANCE_NODE";
-              final instanceResult = SetupDiGetDeviceInstanceId(
-                hDevInfo,
-                devInfoData,
-                PWSTR(instanceIdBuffer.cast()),
-                MAX_PATH,
-                null,
-              );
-              if (instanceResult.value) {
-                deviceInstanceId = instanceIdBuffer
-                    .cast<Utf16>()
-                    .toDartString();
-              }
-
-              // Append verified target node to active device directory
-              devicesFound.add(
-                DiscoveredCamera(
-                  friendlyName: friendlyName,
-                  hardwareId: hardwareId,
-                  deviceInstanceId: deviceInstanceId,
-                ),
-              );
             }
+
+            devicesFound.add(
+              DiscoveredCamera(
+                friendlyName: friendlyName,
+                hardwareId: hardwareId,
+                deviceInstanceId: deviceInstanceId,
+              ),
+            );
+            i++;
           }
-          i++;
+        } finally {
+          SetupDiDestroyDeviceInfoList(hDevInfo);
         }
-      } finally {
-        SetupDiDestroyDeviceInfoList(hDevInfo);
       }
     } finally {
       arena.releaseAll();
